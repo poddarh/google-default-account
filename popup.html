@@ -26,16 +26,31 @@
       display: flex;
       align-items: center;
       margin: 5px 0;
+      position: relative;
     }
     .icon {
       width: 25px;
       height: 25px;
       margin: 0 5px;
     }
-    input {
+    input[type=number] {
       height: 20px;
       width: 50px;
       margin: 0 5px;
+    }
+    input[type=checkbox] {
+      margin: 0 0 0 4px;
+    }
+    .row label {
+      font-size: 11px;
+      color: #9aa0a6;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: absolute;
+      left: 100%;
+      margin-left: 4px;
+      white-space: nowrap;
     }
     p {
       font-size: 12px;
@@ -70,6 +85,10 @@
       <div class="row">
         <img class="icon" src="icons/google-chat.png">
         <input type="number" data-service="Chat" min="0">
+        <label title="Also rewrite chat links (rooms, DMs, threads) to the default account">
+          <input type="checkbox" data-option="ChatDeepLink">
+          links
+        </label>
       </div>
       <div class="row">
         <img class="icon" src="icons/google-maps.png">

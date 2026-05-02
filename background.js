@@ -42,3 +42,19 @@ for (const [name, svc] of Object.entries(SERVICES).filter(([, s]) => s.mode === 
     { url: svc.filters },
   );
 }
+
+// Optional: rewrite deep chat.google.com links (rooms, DMs, threads) to default account
+chrome.webNavigation.onBeforeNavigate.addListener(
+  async ({ tabId, url }) => {
+    const cfg = await chrome.storage.local.get(['Chat', 'ChatDeepLink']);
+    if (!cfg.ChatDeepLink) return;
+    const acct = cfg.Chat ?? '0';
+    if (acct === '0') return;
+    const u = new URL(url);
+    if (u.pathname === '/' || /^\/u\/\d+\//.test(u.pathname)) return;
+    const dest = `https://chat.google.com/u/${acct}${u.pathname}${u.search}${u.hash}`;
+    console.info(`Redirected from ${url} to ${dest}`);
+    chrome.tabs.update(tabId, { url: dest });
+  },
+  { url: [{ hostEquals: 'chat.google.com' }] },
+);
