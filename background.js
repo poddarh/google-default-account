@@ -16,7 +16,8 @@ async function getDefaultAcct(name) {
 // Services using ?authuser= parameter
 for (const [name, svc] of Object.entries(SERVICES).filter(([, s]) => s.mode === 'authuser')) {
   chrome.webNavigation.onBeforeNavigate.addListener(
-    async ({ tabId, url }) => {
+    async ({ tabId, frameId, url }) => {
+      if (frameId !== 0) return;
       if (/authuser=\d+/.test(url) || /\/embed/.test(url)) return;
       const acct = await getDefaultAcct(name);
       if (acct === '0') return;
@@ -32,7 +33,8 @@ for (const [name, svc] of Object.entries(SERVICES).filter(([, s]) => s.mode === 
 // Services using /u/{index}/ path
 for (const [name, svc] of Object.entries(SERVICES).filter(([, s]) => s.mode === 'path')) {
   chrome.webNavigation.onBeforeNavigate.addListener(
-    async ({ tabId, url }) => {
+    async ({ tabId, frameId, url }) => {
+      if (frameId !== 0) return;
       const acct = await getDefaultAcct(name);
       if (acct === '0') return;
       const dest = `${svc.dest}${acct}/`;
@@ -45,7 +47,8 @@ for (const [name, svc] of Object.entries(SERVICES).filter(([, s]) => s.mode === 
 
 // Optional: rewrite deep chat.google.com links (rooms, DMs, threads) to default account
 chrome.webNavigation.onBeforeNavigate.addListener(
-  async ({ tabId, url }) => {
+  async ({ tabId, frameId, url }) => {
+    if (frameId !== 0) return;
     const cfg = await chrome.storage.local.get(['Chat', 'ChatDeepLink']);
     if (!cfg.ChatDeepLink) return;
     const acct = cfg.Chat ?? '0';
