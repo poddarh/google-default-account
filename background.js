@@ -4,7 +4,7 @@ const SERVICES = {
   Mail:    { filters: [{ urlMatches: 'mail.google.com/$' }, { hostEquals: 'gmail.com' }], mode: 'path', dest: 'https://mail.google.com/mail/u/' },
   Drive:   { filters: [{ urlMatches: 'drive.google.com/$' }], mode: 'path', dest: 'https://drive.google.com/drive/u/' },
   Youtube: { filters: [{ hostEquals: 'www.youtube.com' }],   mode: 'authuser' },
-  Maps:    { filters: [{ hostEquals: 'maps.google.com' }],   mode: 'authuser' },
+  Maps:    { filters: [{ hostEquals: 'maps.google.com' }, { hostEquals: 'www.google.com', urlMatches: '/maps' }],   mode: 'authuser' },
   Chat:    { filters: [{ urlMatches: 'chat.google.com/$' }], mode: 'path', dest: 'https://chat.google.com/u/' },
 };
 
@@ -60,4 +60,29 @@ chrome.webNavigation.onBeforeNavigate.addListener(
     chrome.tabs.update(tabId, { url: dest });
   },
   { url: [{ hostEquals: 'chat.google.com' }] },
+);
+
+// Calendar: rewrite both root and deep links (/calendar/u/N/...) to default account
+chrome.webNavigation.onBeforeNavigate.addListener(
+  async ({ tabId, frameId, url }) => {
+    if (frameId !== 0) return;
+    const acct = await getDefaultAcct('Calendar');
+    if (acct === '0') return;
+    const u = new URL(url);
+    const deepMatch = u.pathname.match(/^\/calendar\/u\/(\d+)(\/.*)?$/);
+    if (deepMatch) {
+      if (deepMatch[1] === acct) return;
+      const rest = deepMatch[2] ?? '/';
+      const dest = `https://calendar.google.com/calendar/u/${acct}${rest}${u.search}${u.hash}`;
+      console.info(`Redirected from ${url} to ${dest}`);
+      chrome.tabs.update(tabId, { url: dest });
+      return;
+    }
+    if (u.pathname === '/' || u.pathname === '/calendar' || u.pathname === '/calendar/') {
+      const dest = `https://calendar.google.com/calendar/u/${acct}/r`;
+      console.info(`Redirected from ${url} to ${dest}`);
+      chrome.tabs.update(tabId, { url: dest });
+    }
+  },
+  { url: [{ hostEquals: 'calendar.google.com' }] },
 );
